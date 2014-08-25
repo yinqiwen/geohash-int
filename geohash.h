@@ -88,6 +88,14 @@ extern "C"
     int geohash_decode(const GeoHashRange* lat_range, const GeoHashRange* lon_range, const GeoHashBits* hash, GeoHashArea* area);
     int geohash_get_neighbors(const GeoHashBits* hash, GeoHashNeighbors* neighbors);
 
+    int geohash_get_neighbor(const GeoHashBits* hash, GeoDirection direction, GeoHashBits* neighbor);
+
+    GeoHashBits geohash_next_leftbottom(GeoHashBits bits);
+    GeoHashBits geohash_next_rightbottom(GeoHashBits bits);
+    GeoHashBits geohash_next_lefttop(GeoHashBits bits);
+    GeoHashBits geohash_next_righttop(GeoHashBits bits);
+
+
 #if defined(__cplusplus)
 }
 #endif
