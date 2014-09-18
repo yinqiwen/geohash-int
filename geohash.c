@@ -195,7 +195,6 @@ static inline uint64_t deinterleave64(uint64_t interleaved)
     return x | (y << 32);
 }
 
-
 int geohash_fast_encode(GeoHashRange lat_range, GeoHashRange lon_range, double latitude, double longitude, uint8_t step,
         GeoHashBits* hash)
 {
@@ -229,6 +228,7 @@ int geohash_fast_encode(GeoHashRange lat_range, GeoHashRange lon_range, double l
     hash->bits = interleave64(ilato, ilono);
     return 0;
 }
+
 int geohash_fast_decode(GeoHashRange lat_range, GeoHashRange lon_range, GeoHashBits hash, GeoHashArea* area)
 {
     if (NULL == area)
@@ -251,10 +251,18 @@ int geohash_fast_decode(GeoHashRange lat_range, GeoHashRange lon_range, GeoHashB
     //lon_offset /= (1<<step);
 
     //the ldexp call converts the integer to a double,then divides by 2**step to get the 0-1 coordinate, which is then multiplied times scale and added to the min to get the absolute coordinate
-    area->latitude.min = lat_range.min + ldexp(ilato, -step) * lat_scale;
-    area->latitude.max = lat_range.min + ldexp(ilato + 1, -step) * lat_scale;
-    area->longitude.min = lon_range.min + ldexp(ilono, -step) * lon_scale;
-    area->longitude.max = lon_range.min + ldexp(ilono + 1, -step) * lon_scale;
+//    area->latitude.min = lat_range.min + ldexp(ilato, -step) * lat_scale;
+//    area->latitude.max = lat_range.min + ldexp(ilato + 1, -step) * lat_scale;
+//    area->longitude.min = lon_range.min + ldexp(ilono, -step) * lon_scale;
+//    area->longitude.max = lon_range.min + ldexp(ilono + 1, -step) * lon_scale;
+
+    /*
+     * much faster than 'ldexp'
+     */
+    area->latitude.min = lat_range.min + (ilato * 1.0 / (1ull << step)) * lat_scale;
+    area->latitude.max = lat_range.min + ((ilato + 1) * 1.0 / (1ull << step)) * lat_scale;
+    area->longitude.min = lon_range.min + (ilono * 1.0 / (1ull << step)) * lon_scale;
+    area->longitude.max = lon_range.min + ((ilono + 1) * 1.0 / (1ull << step)) * lon_scale;
 
     return 0;
 }
@@ -378,7 +386,6 @@ int geohash_get_neighbor(GeoHashBits hash, GeoDirection direction, GeoHashBits* 
             return -1;
         }
     }
-
     return 0;
 }
 
@@ -414,6 +421,70 @@ GeoHashBits geohash_next_righttop(GeoHashBits bits)
     return newbits;
 }
 
+/*
+ #include <time.h>
+ #include <sys/time.h>
+ uint64_t get_current_epoch_millis()
+ {
+ struct timeval timeValue;
+ gettimeofday(&timeValue, NULL);
+ uint64_t ret = ((uint64_t) timeValue.tv_sec) * 1000;
+ ret += ((timeValue.tv_usec) / 1000);
+ return ret;
+ }
+
+ int main()
+ {
+ GeoHashBits hash, fast_hash;
+ GeoHashNeighbors neighbors;
+
+ GeoHashRange lat_range, lon_range;
+ lat_range.max = 20037726.37;
+ lat_range.min = -20037726.37;
+ lon_range.max = 20037726.37;
+ lon_range.min = -20037726.37;
+ double radius = 5000;
+ double latitude = 9741705.20;
+ double longitude = 5417390.90;
+
+ uint32_t loop = 10000000;
+ uint32_t i = 0;
+ uint64_t start = get_current_epoch_millis();
+ for (i = 0; i < loop; i++)
+ {
+ geohash_encode(lat_range, lon_range, latitude, longitude, 24, &hash);
+ }
+ uint64_t end = get_current_epoch_millis();
+ printf("Cost %llums to encode\n", end - start);
+
+ start = get_current_epoch_millis();
+ for (i = 0; i < loop; i++)
+ {
+ geohash_fast_encode(lat_range, lon_range, latitude, longitude, 24, &fast_hash);
+ }
+ end = get_current_epoch_millis();
+ printf("Cost %llums to fast encode\n", end - start);
+
+ GeoHashArea area, area1;
+ start = get_current_epoch_millis();
+ for (i = 0; i < loop; i++)
+ {
+ geohash_decode(lat_range, lon_range, hash, &area);
+ }
+ end = get_current_epoch_millis();
+ printf("Cost %llums to  decode\n", end - start);
+
+ start = get_current_epoch_millis();
+ for (i = 0; i < loop; i++)
+ {
+ geohash_fast_decode(lat_range, lon_range, hash, &area1);
+ }
+ end = get_current_epoch_millis();
+ printf("Cost %llums to fast decode\n", end - start);
+
+ return 0;
+ }
+*/
 /*
 int main()
 {
