@@ -95,7 +95,6 @@ int geohash_encode(
 
 static inline uint8_t get_bit(uint64_t bits, uint8_t pos)
 {
-    // TODO: Confirm with @yinqiwen if we should instead be using [ bits & (1 << pos) ]
     return (bits >> pos) & 0x01;
 }
 
