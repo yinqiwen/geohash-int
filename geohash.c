@@ -45,8 +45,9 @@
  *  -----------------
  */
 
-int geohash_encode(GeoHashRange lat_range, GeoHashRange lon_range, double latitude, double longitude, uint8_t step,
-        GeoHashBits* hash)
+int geohash_encode(
+        GeoHashRange lat_range, GeoHashRange lon_range,
+        double latitude, double longitude, uint8_t step, GeoHashBits* hash)
 {
     if (NULL == hash || step > 32 || step == 0)
     {
@@ -55,7 +56,8 @@ int geohash_encode(GeoHashRange lat_range, GeoHashRange lon_range, double latitu
     hash->bits = 0;
     hash->step = step;
     uint8_t i = 0;
-    if (latitude < lat_range.min || latitude > lat_range.max || longitude < lon_range.min || longitude > lon_range.max)
+    if (latitude < lat_range.min || latitude > lat_range.max
+     || longitude < lon_range.min || longitude > lon_range.max)
     {
         return -1;
     }
@@ -93,10 +95,12 @@ int geohash_encode(GeoHashRange lat_range, GeoHashRange lon_range, double latitu
 
 static inline uint8_t get_bit(uint64_t bits, uint8_t pos)
 {
+    // TODO: Confirm with @yinqiwen if we should instead be using [ bits & (1 << pos) ]
     return (bits >> pos) & 0x01;
 }
 
-int geohash_decode(GeoHashRange lat_range, GeoHashRange lon_range, GeoHashBits hash, GeoHashArea* area)
+int geohash_decode(
+        GeoHashRange lat_range, GeoHashRange lon_range, GeoHashBits hash, GeoHashArea* area)
 {
     if (NULL == area)
     {
@@ -195,8 +199,9 @@ static inline uint64_t deinterleave64(uint64_t interleaved)
     return x | (y << 32);
 }
 
-int geohash_fast_encode(GeoHashRange lat_range, GeoHashRange lon_range, double latitude, double longitude, uint8_t step,
-        GeoHashBits* hash)
+int geohash_fast_encode(
+        GeoHashRange lat_range, GeoHashRange lon_range, double latitude,
+        double longitude, uint8_t step,  GeoHashBits* hash)
 {
     if (NULL == hash || step > 32 || step == 0)
     {
@@ -204,14 +209,14 @@ int geohash_fast_encode(GeoHashRange lat_range, GeoHashRange lon_range, double l
     }
     hash->bits = 0;
     hash->step = step;
-    uint8_t i = 0;
-    if (latitude < lat_range.min || latitude > lat_range.max || longitude < lon_range.min || longitude > lon_range.max)
+    if   (latitude < lat_range.min || latitude > lat_range.max
+      || longitude < lon_range.min || longitude > lon_range.max)
     {
         return -1;
     }
 
-    //the algorithm computes the morton code for the geohash location within the range.
-    //this can be done MUCH more efficiently using the following code
+    // The algorithm computes the morton code for the geohash location within
+    // the range this can be done MUCH more efficiently using the following code
 
     //compute the coordinate in the range 0-1
     double lat_offset = (latitude - lat_range.min) / (lat_range.max - lat_range.min);
@@ -412,6 +417,7 @@ GeoHashBits geohash_next_lefttop(GeoHashBits bits)
     newbits.bits += 1;
     return newbits;
 }
+
 GeoHashBits geohash_next_righttop(GeoHashBits bits)
 {
     GeoHashBits newbits = bits;
@@ -420,122 +426,3 @@ GeoHashBits geohash_next_righttop(GeoHashBits bits)
     newbits.bits += 3;
     return newbits;
 }
-
-/*
- #include <time.h>
- #include <sys/time.h>
- uint64_t get_current_epoch_millis()
- {
- struct timeval timeValue;
- gettimeofday(&timeValue, NULL);
- uint64_t ret = ((uint64_t) timeValue.tv_sec) * 1000;
- ret += ((timeValue.tv_usec) / 1000);
- return ret;
- }
-
- int main()
- {
- GeoHashBits hash, fast_hash;
- GeoHashNeighbors neighbors;
-
- GeoHashRange lat_range, lon_range;
- lat_range.max = 20037726.37;
- lat_range.min = -20037726.37;
- lon_range.max = 20037726.37;
- lon_range.min = -20037726.37;
- double radius = 5000;
- double latitude = 9741705.20;
- double longitude = 5417390.90;
-
- uint32_t loop = 10000000;
- uint32_t i = 0;
- uint64_t start = get_current_epoch_millis();
- for (i = 0; i < loop; i++)
- {
- geohash_encode(lat_range, lon_range, latitude, longitude, 24, &hash);
- }
- uint64_t end = get_current_epoch_millis();
- printf("Cost %llums to encode\n", end - start);
-
- start = get_current_epoch_millis();
- for (i = 0; i < loop; i++)
- {
- geohash_fast_encode(lat_range, lon_range, latitude, longitude, 24, &fast_hash);
- }
- end = get_current_epoch_millis();
- printf("Cost %llums to fast encode\n", end - start);
-
- GeoHashArea area, area1;
- start = get_current_epoch_millis();
- for (i = 0; i < loop; i++)
- {
- geohash_decode(lat_range, lon_range, hash, &area);
- }
- end = get_current_epoch_millis();
- printf("Cost %llums to  decode\n", end - start);
-
- start = get_current_epoch_millis();
- for (i = 0; i < loop; i++)
- {
- geohash_fast_decode(lat_range, lon_range, hash, &area1);
- }
- end = get_current_epoch_millis();
- printf("Cost %llums to fast decode\n", end - start);
-
- return 0;
- }
-*/
-/*
-int main()
-{
-    GeoHashBits hash, fast_hash;
-    GeoHashNeighbors neighbors;
-
-    GeoHashRange lat_range, lon_range;
-    lat_range.max = 20037726.37;
-    lat_range.min = -20037726.37;
-    lon_range.max = 20037726.37;
-    lon_range.min = -20037726.37;
-    double radius = 5000;
-    double latitude = 9741705.20;
-    double longitude = 5417390.90;
-    GeoHashBits hash_min, hash_max, hash_lt, hash_gr;
-    geohash_encode(lat_range, lon_range, latitude, longitude, 24, &hash);
-    geohash_fast_encode(lat_range, lon_range, latitude, longitude, 24, &fast_hash);
-    geohash_encode(lat_range, lon_range, latitude - radius, longitude - radius, 13, &hash_min);
-    geohash_encode(lat_range, lon_range, latitude + radius, longitude + radius, 13, &hash_max);
-    geohash_encode(lat_range, lon_range, latitude + radius, longitude - radius, 13, &hash_lt);
-    geohash_encode(lat_range, lon_range, latitude - radius, longitude + radius, 13, &hash_gr);
-
-    printf("## %lld\n", hash.bits);
-    printf("## %lld\n", fast_hash.bits);
-    geohash_get_neighbors(hash, &neighbors);
-    printf("%lld\n", hash.bits);
-    printf("%lld\n", neighbors.east.bits);
-    printf("%lld\n", neighbors.west.bits);
-    printf("%lld\n", neighbors.south.bits);
-    printf("%lld\n", neighbors.north.bits);
-    printf("%lld\n", neighbors.north_west.bits);
-    printf("%lld\n", neighbors.north_east.bits);
-    printf("%lld\n", neighbors.south_east.bits);
-    printf("%lld\n", neighbors.south_west.bits);
-
-    printf("##%lld\n", hash_min.bits);
-    printf("##%lld\n", hash_max.bits);
-    printf("##%lld\n", hash_lt.bits);
-    printf("##%lld\n", hash_gr.bits);
-
-    //    geohash_encode(&lat_range, &lon_range, 9741705.20, 5417390.90, 13, &hash);
-    //    printf("from %lld to %lld \n", hash.bits << 2, (hash.bits+1) << 2);
-
-    GeoHashArea area, area1;
-    geohash_decode(lat_range, lon_range, hash, &area);
-    geohash_fast_decode(lat_range, lon_range, hash, &area1);
-    printf("%.10f %.10f\n", area.latitude.min, area.latitude.max);
-    printf("%.10f %.10f\n", area.longitude.min, area.longitude.max);
-    printf("%.10f %.10f\n", area1.latitude.min, area1.latitude.max);
-    printf("%.10f %.10f\n", area1.longitude.min, area1.longitude.max);
-
-    return 0;
-}
-*/
