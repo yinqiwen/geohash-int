@@ -89,9 +89,6 @@ int geohash_encode(
         hash->bits += lon_bit;
         hash->bits <<= 1;
         hash->bits += lat_bit;
-        if (i == (step - 1)){
-
-        }
     }
     return 0;
 }
