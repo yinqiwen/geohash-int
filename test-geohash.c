@@ -117,8 +117,34 @@ int test_2()
     return 0;
 }
 
-int main() {
+void test_3()
+{
+    GeoHashBits hash, fast_hash;
+
+    GeoHashRange lat_range, lon_range;
+    lat_range.max = 90.0;
+    lat_range.min = -90.0;
+    lon_range.max = 180.0;
+    lon_range.min = -180.0;
+
+    double latitude = 12.34;
+    double longitude = 56.78;
+
+    for (int step = 1; step <= 32; step++)
+    {
+        geohash_encode(lat_range, lon_range, latitude, longitude, step, &hash);
+        geohash_fast_encode(lat_range, lon_range, latitude, longitude, step, &fast_hash);
+
+        printf("normal encode (%d): %llu\n", step, hash.bits);
+        printf("fast encode   (%d): %llu\n", step, fast_hash.bits);
+        printf("\n");
+    }
+}
+
+int main()
+{
     test_1();
     test_2();
+    test_3();
     return 0;
 }
